@@ -47,7 +47,7 @@ enum AppConfiguration {
     /// Your Railway deployment URL
     /// After deploying to Railway, replace this with your actual URL
     /// Example: "https://pulse-production.up.railway.app/v1"
-    private static let railwayURL = "https://your-app.up.railway.app/v1"
+    private static let railwayURL = "https://pulse-production-82b3.up.railway.app/v1"
     
     // MARK: - Feature Flags
     
