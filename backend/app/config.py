@@ -5,7 +5,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # App
-    app_name: str = "PULSE API"
+    app_name: str = "PulseFlare API"
     debug: bool = os.getenv("DEBUG", "true").lower() == "true"
 
     # Database — set DATABASE_URL env var in production (PostgreSQL)

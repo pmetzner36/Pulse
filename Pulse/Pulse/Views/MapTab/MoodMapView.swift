@@ -158,7 +158,7 @@ struct MoodMapView: View {
                     .background(.ultraThinMaterial)
                 }
             }
-            .navigationTitle("PULSE")
+            .navigationTitle("PULSEFLARE")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingDetail) {
                 if let pin = selectedPin {

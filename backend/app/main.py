@@ -85,7 +85,7 @@ app.include_router(subgrounds.router, prefix="/v1")
 
 @app.get("/")
 async def root():
-    return {"message": "PULSE API", "version": "1.0.0"}
+    return {"message": "PulseFlare API", "version": "1.0.0"}
 
 
 @app.get("/health")
