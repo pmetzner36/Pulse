@@ -23,7 +23,7 @@ struct WelcomeView: View {
                         .foregroundStyle(.purple)
                         .symbolEffect(.pulse)
 
-                    Text("PULSEFLARE")
+                    Text("PULSIVITY")
                         .font(.system(size: 40, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
 

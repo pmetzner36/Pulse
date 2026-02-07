@@ -4,7 +4,12 @@ import AuthenticationServices
 struct SignInView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openURL) private var openURL
     @StateObject private var authService = AuthenticationService.shared
+    @State private var showDemoLogin = false
+    @State private var demoCode = ""
+
+    private let privacyURL = URL(string: "https://pmetzner36.github.io/Pulse/")!
 
     var body: some View {
         NavigationStack {
@@ -88,6 +93,33 @@ struct SignInView: View {
                 }
                 .padding(.horizontal, 32)
 
+                // Demo access
+                if showDemoLogin {
+                    VStack(spacing: 12) {
+                        TextField("Demo code", text: $demoCode)
+                            .textFieldStyle(.roundedBorder)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+
+                        Button {
+                            Task { await demoSignIn() }
+                        } label: {
+                            Text("Sign In with Demo Code")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.purple)
+                        }
+                        .disabled(demoCode.isEmpty || authService.isSigningIn)
+                    }
+                    .padding(.horizontal, 32)
+                } else {
+                    Button("Demo Access") {
+                        showDemoLogin = true
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
                 // Terms
                 VStack(spacing: 8) {
                     Text("By signing in, you agree to our")
@@ -96,7 +128,7 @@ struct SignInView: View {
 
                     HStack(spacing: 4) {
                         Button("Terms of Service") {
-                            // TODO: Open terms
+                            openURL(privacyURL)
                         }
                         .font(.caption)
 
@@ -105,7 +137,7 @@ struct SignInView: View {
                             .foregroundStyle(.secondary)
 
                         Button("Privacy Policy") {
-                            // TODO: Open privacy policy
+                            openURL(privacyURL)
                         }
                         .font(.caption)
                     }
@@ -136,6 +168,15 @@ struct SignInView: View {
     private func devSignIn() async {
         do {
             try await authService.devSignIn()
+            dismiss()
+        } catch {
+            // Error is already set in authService
+        }
+    }
+
+    private func demoSignIn() async {
+        do {
+            try await authService.demoSignIn(code: demoCode)
             dismiss()
         } catch {
             // Error is already set in authService

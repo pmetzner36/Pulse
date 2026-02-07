@@ -216,6 +216,26 @@ struct MapMoodPin: Codable, Identifiable {
     let longitude: Double
 }
 
+// MARK: - Monthly Mood History
+struct MonthlyMoodHistory: Codable, Identifiable {
+    var id: String { "\(year)-\(month)" }
+    let year: Int
+    let month: Int
+    let totalSubmissions: Int
+    let averageRating: Double
+    let ratingDistribution: [String: Int]
+    let topCategories: [String]
+
+    var monthName: String {
+        let df = DateFormatter()
+        df.dateFormat = "MMM yyyy"
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        return df.string(from: Calendar.current.date(from: comps) ?? Date())
+    }
+}
+
 // MARK: - Time Window
 enum TimeWindow: String, CaseIterable {
     case fifteenMin = "15m"

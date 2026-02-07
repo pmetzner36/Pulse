@@ -9,6 +9,9 @@ struct ChatView: View {
     @State private var showSubgrounds = false
     @State private var isDetectingLocation = false
     @State private var showLocationBanner = false
+    @State private var subgroundsVM = SubgroundsListViewModel()
+    @State private var showCreateSubground = false
+    @State private var selectedSubground: Subground?
 
     private var isInDetectedCity: Bool {
         locationService.currentCity?.id == preferences.selectedCityId
@@ -60,6 +63,11 @@ struct ChatView: View {
             .onChange(of: preferences.selectedCityId) { _, _ in
                 Task {
                     await viewModel.connect(to: preferences.selectedCity, category: viewModel.selectedCategory)
+                    await subgroundsVM.loadSubgrounds(
+                        for: preferences.selectedCityId,
+                        category: viewModel.selectedCategory,
+                        refresh: true
+                    )
                 }
             }
             .task {
@@ -67,6 +75,10 @@ struct ChatView: View {
                     // Auto-detect location on first open
                     await detectLocationAndConnect()
                 }
+                await subgroundsVM.loadSubgrounds(
+                    for: preferences.selectedCityId,
+                    category: viewModel.selectedCategory
+                )
             }
             .onDisappear {
                 viewModel.disconnect()
@@ -134,31 +146,40 @@ struct ChatView: View {
             // Category tabs
             categoryTabs
 
-            // Messages list
+            // Scrollable content: posts + chat
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 4) {
-                        if viewModel.hasMoreMessages && !viewModel.messages.isEmpty {
-                            ProgressView()
-                                .padding()
-                                .onAppear {
-                                    Task {
-                                        await viewModel.loadMessages()
-                                    }
-                                }
-                        }
+                    VStack(spacing: 0) {
+                        // Inline posts for selected category
+                        inlinePosts
 
-                        ForEach(viewModel.messages) { message in
-                            ChatMessageView(message: message)
-                                .id(message.id)
-                                .onAppear {
-                                    Task {
-                                        await viewModel.loadMoreIfNeeded(currentMessage: message)
+                        Divider()
+                            .padding(.vertical, 4)
+
+                        // Chat messages
+                        LazyVStack(spacing: 4) {
+                            if viewModel.hasMoreMessages && !viewModel.messages.isEmpty {
+                                ProgressView()
+                                    .padding()
+                                    .onAppear {
+                                        Task {
+                                            await viewModel.loadMessages()
+                                        }
                                     }
-                                }
+                            }
+
+                            ForEach(viewModel.messages) { message in
+                                ChatMessageView(message: message)
+                                    .id(message.id)
+                                    .onAppear {
+                                        Task {
+                                            await viewModel.loadMoreIfNeeded(currentMessage: message)
+                                        }
+                                    }
+                            }
                         }
+                        .padding(.vertical, 8)
                     }
-                    .padding(.vertical, 8)
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: viewModel.messages.count) { oldCount, newCount in
@@ -202,67 +223,96 @@ struct ChatView: View {
                 }
             )
         }
+        .sheet(isPresented: $showCreateSubground) {
+            CreateSubgroundView(
+                cityId: preferences.selectedCityId,
+                cityName: preferences.selectedCity.name,
+                category: viewModel.selectedCategory
+            ) { subground in
+                selectedSubground = subground
+            }
+        }
+        .navigationDestination(item: $selectedSubground) { subground in
+            SubgroundDetailView(subground: subground)
+        }
     }
 
     // MARK: - Category Tabs
 
     private var categoryTabs: some View {
-        VStack(spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(ChatCategory.allCases) { category in
-                        CategoryTab(
-                            category: category,
-                            isSelected: viewModel.selectedCategory == category
-                        ) {
-                            Task {
-                                await viewModel.switchCategory(category)
-                            }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(ChatCategory.allCases) { category in
+                    CategoryTab(
+                        category: category,
+                        isSelected: viewModel.selectedCategory == category
+                    ) {
+                        Task {
+                            await viewModel.switchCategory(category)
+                            await subgroundsVM.loadSubgrounds(
+                                for: preferences.selectedCityId,
+                                category: category
+                            )
                         }
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
             }
-            .background(Color(.systemGray6).opacity(0.5))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .background(Color(.systemGray6).opacity(0.5))
+    }
 
-            // Posts entry point
-            NavigationLink {
-                SubgroundsListView(
-                    cityId: preferences.selectedCityId,
-                    cityName: preferences.selectedCity.name,
-                    category: viewModel.selectedCategory
-                )
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "doc.text.fill")
+    // MARK: - Inline Posts
+
+    private var inlinePosts: some View {
+        VStack(spacing: 0) {
+            // Section header
+            HStack {
+                Text("\(viewModel.selectedCategory.displayName) Posts")
+                    .font(.headline)
+                Spacer()
+                Button {
+                    showCreateSubground = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(viewModel.selectedCategory.color)
-                        .frame(width: 36, height: 36)
-                        .background(viewModel.selectedCategory.color.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
+                        .foregroundStyle(.purple)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(viewModel.selectedCategory.displayName) Posts")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                        Text("Share with your community")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
+            if subgroundsVM.isLoading && subgroundsVM.subgrounds.isEmpty {
+                ProgressView("Loading posts...")
+                    .padding()
+            } else if subgroundsVM.subgrounds.isEmpty {
+                VStack(spacing: 8) {
+                    Text("No posts yet")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("Be the first to post!")
                         .font(.caption)
-                        .fontWeight(.semibold)
                         .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(Color(.systemGray6).opacity(0.8))
+                .padding()
+            } else {
+                ForEach(subgroundsVM.subgrounds) { subground in
+                    Button {
+                        selectedSubground = subground
+                    } label: {
+                        SubgroundRowView(subground: subground)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider()
+                        .padding(.leading, 14)
+                }
             }
         }
+        .background(Color(.systemBackground))
     }
 
     // MARK: - Location Banners

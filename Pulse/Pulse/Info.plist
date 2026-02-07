@@ -8,7 +8,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>PULSE uses your location to detect your current city and show local mood data.</string>
+	<string>Pulsivity uses your location to detect your current city and show local mood data.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

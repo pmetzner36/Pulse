@@ -182,6 +182,32 @@ final class AuthenticationService: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Demo Sign In (for App Store review)
+
+    func demoSignIn(code: String) async throws {
+        isSigningIn = true
+        signInError = nil
+
+        defer { isSigningIn = false }
+
+        do {
+            let request = DemoLoginRequest(demoCode: code)
+            let response: AuthResponse = try await APIClient.shared.request(
+                endpoint: "/auth/demo-login",
+                method: .post,
+                body: request,
+                requiresAuth: false
+            )
+
+            try KeychainService.shared.saveTokens(response.toTokens())
+            CurrentUser.shared.setUser(response.user)
+        } catch {
+            let authError = AuthError.signInFailed(error)
+            signInError = authError
+            throw authError
+        }
+    }
+
     // MARK: - Session Management
 
     func restoreSession() async -> Bool {

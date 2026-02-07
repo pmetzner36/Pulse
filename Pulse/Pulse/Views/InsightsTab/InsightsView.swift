@@ -88,6 +88,25 @@ struct InsightsView: View {
                             }
                         }
 
+                        // Monthly Trends
+                        if !viewModel.moodHistory.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Monthly Trends")
+                                    .font(.headline)
+                                    .padding(.horizontal)
+
+                                VStack(spacing: 0) {
+                                    ForEach(viewModel.moodHistory) { entry in
+                                        MonthlyTrendRow(entry: entry)
+                                    }
+                                }
+                                .background(Color(.systemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .shadow(color: .black.opacity(0.03), radius: 5, y: 2)
+                                .padding(.horizontal)
+                            }
+                        }
+
                         Spacer(minLength: 40)
                     }
                 }
@@ -356,6 +375,85 @@ struct CategoryBreakdownRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Monthly Trend Row
+
+struct MonthlyTrendRow: View {
+    let entry: MonthlyMoodHistory
+
+    private var ratingEmoji: String {
+        switch entry.averageRating {
+        case ..<1.5: return "😢"
+        case 1.5..<2.5: return "😕"
+        case 2.5..<3.5: return "😐"
+        case 3.5..<4.5: return "🙂"
+        default: return "😊"
+        }
+    }
+
+    private var ratingColor: Color {
+        switch entry.averageRating {
+        case ..<2.0: return .red
+        case 2.0..<3.0: return .orange
+        case 3.0..<4.0: return .blue
+        default: return .green
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Month name
+            Text(entry.monthName)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .frame(width: 70, alignment: .leading)
+
+            // Rating emoji + number
+            HStack(spacing: 4) {
+                Text(ratingEmoji)
+                    .font(.subheadline)
+                Text(String(format: "%.1f", entry.averageRating))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(ratingColor)
+            }
+            .frame(width: 55, alignment: .leading)
+
+            // Rating bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(.systemGray5))
+                        .frame(height: 8)
+
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(ratingColor)
+                        .frame(width: geo.size.width * CGFloat(entry.averageRating / 5.0), height: 8)
+                }
+            }
+            .frame(height: 8)
+
+            // Submission count
+            Text("\(entry.totalSubmissions)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 30, alignment: .trailing)
+
+            // Top category chips (first 3)
+            HStack(spacing: 4) {
+                ForEach(entry.topCategories.prefix(3), id: \.self) { cat in
+                    let topic = MoodTopic(rawValue: cat)
+                    Text(topic?.icon ?? cat.prefix(3).description)
+                        .font(.caption2)
+                        .foregroundStyle(topic?.color ?? .secondary)
+                }
+            }
+            .frame(width: 60, alignment: .trailing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 }
 

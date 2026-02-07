@@ -59,6 +59,11 @@ struct MoodSubmissionView: View {
             } message: {
                 Text("Thanks for sharing how you're feeling about \(preferences.selectedCity.name)!")
             }
+            .task {
+                if locationService.currentLocation == nil {
+                    await locationService.detectCurrentCity()
+                }
+            }
         }
     }
     

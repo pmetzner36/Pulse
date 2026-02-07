@@ -7,6 +7,7 @@ final class InsightsViewModel {
     private(set) var summary: CityMoodSummary?
     private(set) var aggregates: [MoodAggregateResponse] = []
     private(set) var categoryNews: [CategoryNews] = []
+    private(set) var moodHistory: [MonthlyMoodHistory] = []
     private(set) var isLoading = false
     private(set) var error: String?
 
@@ -149,6 +150,9 @@ final class InsightsViewModel {
         // Fetch news in parallel (non-blocking)
         await service.fetchCategoryNews(cityId: cityId)
         categoryNews = service.categoryNews
+
+        await service.fetchMoodHistory(cityId: cityId)
+        moodHistory = service.moodHistory
 
         if let serviceError = service.error {
             error = serviceError

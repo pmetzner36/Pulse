@@ -107,3 +107,7 @@ struct AppleSignInRequest: Codable {
     let fullName: String?
     let email: String?
 }
+
+struct DemoLoginRequest: Codable {
+    let demoCode: String
+}

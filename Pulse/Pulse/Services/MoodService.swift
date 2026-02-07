@@ -12,6 +12,7 @@ final class MoodService {
     private(set) var mapPins: [MapMoodPin] = []
     private(set) var isLoadingPins = false
     private(set) var categoryNews: [CategoryNews] = []
+    private(set) var moodHistory: [MonthlyMoodHistory] = []
     private(set) var error: String?
     
     private init() {}
@@ -104,6 +105,20 @@ final class MoodService {
         } catch {
             self.error = error.localizedDescription
             mapPins = []
+        }
+    }
+
+    func fetchMoodHistory(cityId: String, months: Int = 12) async {
+        do {
+            let history: [MonthlyMoodHistory] = try await APIClient.shared.request(
+                endpoint: "/mood/history/\(cityId)?months=\(months)",
+                method: .get,
+                requiresAuth: false
+            )
+            moodHistory = history
+        } catch {
+            // History is non-critical, silently fail
+            moodHistory = []
         }
     }
 

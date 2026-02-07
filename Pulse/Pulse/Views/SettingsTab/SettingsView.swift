@@ -155,7 +155,7 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
 
-                    Link(destination: URL(string: "https://pulse-app.example.com")!) {
+                    Link(destination: URL(string: "https://pmetzner36.github.io/Pulse/")!) {
                         HStack {
                             Text("Website")
                             Spacer()
@@ -168,7 +168,7 @@ struct SettingsView: View {
                     Text("About")
                 } footer: {
                     VStack(spacing: 8) {
-                        Text("PULSE shows aggregated mood trends based on anonymous activity patterns.")
+                        Text("Pulsivity shows aggregated mood trends based on anonymous activity patterns.")
                         Text("This is not medical advice.")
                             .fontWeight(.medium)
                     }
@@ -255,7 +255,7 @@ struct PrivacyView: View {
                             .font(.title2)
                             .fontWeight(.bold)
 
-                        Text("PULSE is designed with privacy at its core")
+                        Text("Pulsivity is designed with privacy at its core")
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity)
